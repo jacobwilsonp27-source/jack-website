@@ -1,181 +1,146 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Snake Game With Walls</title>
+    <title>3D Bike Racing Game 🏍️</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            margin: 0;
-            background: #111;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+        body { margin: 0; overflow: hidden; background: black; }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
             color: white;
             font-family: Arial;
-        }
-
-        canvas {
-            background: #222;
-            touch-action: none;
-        }
-
-        button {
-            margin-top: 10px;
-            padding: 8px 15px;
-            border: none;
-            background: lime;
-            font-weight: bold;
-            cursor: pointer;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-<h2>🐍 Snake Game + Walls</h2>
-<canvas id="game" width="400" height="400"></canvas>
 <div id="score">Score: 0</div>
-<button onclick="startGame()">Restart</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
 
-const box = 20;
-const gridSize = 400;
-const totalBlocks = gridSize / box;
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-let snake;
-let direction;
-let food;
-let walls;
-let score;
-let gameInterval;
+// Light
+let light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(0,10,10);
+scene.add(light);
 
-// Start Game
-function startGame() {
-    snake = [{x: 200, y: 200}];
-    direction = "RIGHT";
-    score = 0;
-    document.getElementById("score").innerText = "Score: 0";
+// Road
+let roadGeometry = new THREE.PlaneGeometry(12, 200);
+let roadMaterial = new THREE.MeshLambertMaterial({color: 0x333333});
+let road = new THREE.Mesh(roadGeometry, roadMaterial);
+road.rotation.x = -Math.PI/2;
+scene.add(road);
 
-    food = randomPosition();
-    walls = createWalls(8);
+// Bike (simple 3D shape)
+let bikeGroup = new THREE.Group();
 
-    clearInterval(gameInterval);
-    gameInterval = setInterval(draw, 120);
+let body = new THREE.Mesh(
+    new THREE.BoxGeometry(1,0.5,2),
+    new THREE.MeshLambertMaterial({color:0xff0000})
+);
+body.position.y = 0.5;
+bikeGroup.add(body);
+
+let wheel1 = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.4,0.4,0.5,16),
+    new THREE.MeshLambertMaterial({color:0x000000})
+);
+wheel1.rotation.z = Math.PI/2;
+wheel1.position.set(0,0.4,0.9);
+bikeGroup.add(wheel1);
+
+let wheel2 = wheel1.clone();
+wheel2.position.z = -0.9;
+bikeGroup.add(wheel2);
+
+bikeGroup.position.z = 5;
+scene.add(bikeGroup);
+
+// Camera position
+camera.position.set(0,5,10);
+camera.lookAt(bikeGroup.position);
+
+// Obstacles
+let obstacles = [];
+let score = 0;
+
+function createObstacle(){
+    let obstacle = new THREE.Mesh(
+        new THREE.BoxGeometry(1,1,1),
+        new THREE.MeshLambertMaterial({color:0xffff00})
+    );
+    obstacle.position.x = (Math.random()-0.5)*8;
+    obstacle.position.y = 0.5;
+    obstacle.position.z = -100;
+    scene.add(obstacle);
+    obstacles.push(obstacle);
 }
 
-// Random Position Generator
-function randomPosition() {
-    return {
-        x: Math.floor(Math.random() * totalBlocks) * box,
-        y: Math.floor(Math.random() * totalBlocks) * box
-    };
-}
+setInterval(createObstacle, 1500);
 
-// Create Walls
-function createWalls(count) {
-    let arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push(randomPosition());
-    }
-    return arr;
-}
-
-// Keyboard Controls
-document.addEventListener("keydown", function(e) {
-    if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-    if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-    if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-    if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+// Controls
+document.addEventListener("keydown", e=>{
+    if(e.key==="ArrowLeft") bikeGroup.position.x -= 0.5;
+    if(e.key==="ArrowRight") bikeGroup.position.x += 0.5;
 });
 
-// Touch Controls
-let startX, startY;
-
-canvas.addEventListener("touchstart", function(e) {
+// Touch
+let startX;
+window.addEventListener("touchstart", e=>{
     startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
 });
 
-canvas.addEventListener("touchend", function(e) {
+window.addEventListener("touchend", e=>{
     let endX = e.changedTouches[0].clientX;
-    let endY = e.changedTouches[0].clientY;
-
-    let dx = endX - startX;
-    let dy = endY - startY;
-
-    if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
-        if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
-    } else {
-        if (dy > 0 && direction !== "UP") direction = "DOWN";
-        if (dy < 0 && direction !== "DOWN") direction = "UP";
-    }
+    if(endX-startX>50) bikeGroup.position.x += 0.5;
+    if(startX-endX>50) bikeGroup.position.x -= 0.5;
 });
 
-// Draw Game
-function draw() {
+// Animation loop
+function animate(){
+    requestAnimationFrame(animate);
 
-    // Clear screen
-    ctx.fillStyle = "#222";
-    ctx.fillRect(0, 0, gridSize, gridSize);
+    obstacles.forEach((ob,index)=>{
+        ob.position.z += 0.8;
 
-    // Draw walls
-    ctx.fillStyle = "gray";
-    walls.forEach(w => {
-        ctx.fillRect(w.x, w.y, box, box);
+        if(
+            Math.abs(ob.position.x - bikeGroup.position.x) < 1 &&
+            Math.abs(ob.position.z - bikeGroup.position.z) < 1
+        ){
+            alert("Game Over! Final Score: "+score);
+            location.reload();
+        }
+
+        if(ob.position.z > 10){
+            scene.remove(ob);
+            obstacles.splice(index,1);
+            score++;
+            document.getElementById("score").innerText = "Score: "+score;
+        }
     });
 
-    // Draw snake
-    ctx.fillStyle = "lime";
-    snake.forEach(part => {
-        ctx.fillRect(part.x, part.y, box, box);
-    });
-
-    // Draw food
-    ctx.fillStyle = "red";
-    ctx.fillRect(food.x, food.y, box, box);
-
-    let head = {x: snake[0].x, y: snake[0].y};
-
-    if (direction === "UP") head.y -= box;
-    if (direction === "DOWN") head.y += box;
-    if (direction === "LEFT") head.x -= box;
-    if (direction === "RIGHT") head.x += box;
-
-    // Collision detection
-    if (
-        head.x < 0 || head.y < 0 ||
-        head.x >= gridSize || head.y >= gridSize ||
-        checkCollision(head, snake) ||
-        checkCollision(head, walls)
-    ) {
-        clearInterval(gameInterval);
-        alert("Game Over! Score: " + score);
-        return;
-    }
-
-    snake.unshift(head);
-
-    // Eat food
-    if (head.x === food.x && head.y === food.y) {
-        score++;
-        document.getElementById("score").innerText = "Score: " + score;
-        food = randomPosition();
-    } else {
-        snake.pop();
-    }
+    renderer.render(scene,camera);
 }
 
-// Collision Check
-function checkCollision(head, array) {
-    return array.some(item => item.x === head.x && item.y === head.y);
-}
+animate();
 
-startGame();
+// Resize
+window.addEventListener("resize",()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 
 </body>
