@@ -1,84 +1,138 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Magic Name Fun 🎉</title>
+    <title>Writers Wall ✍️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <style>
         body {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            font-family: Arial, sans-serif;
+            margin: 0;
+            font-family: 'Georgia', serif;
+            background: #f4f1ea;
             text-align: center;
+        }
+
+        header {
+            background: #2c3e50;
             color: white;
-            padding-top: 100px;
+            padding: 30px;
+            font-size: 28px;
+            letter-spacing: 2px;
         }
 
-        h1 {
-            font-size: 40px;
+        .container {
+            padding: 40px 20px;
         }
 
-        input {
-            padding: 12px;
-            font-size: 18px;
-            border-radius: 8px;
-            border: none;
+        textarea {
+            width: 80%;
+            max-width: 500px;
+            height: 100px;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            resize: none;
         }
 
         button {
-            padding: 12px 20px;
-            font-size: 18px;
-            border-radius: 8px;
+            margin-top: 15px;
+            padding: 12px 25px;
+            font-size: 16px;
             border: none;
+            border-radius: 8px;
+            background: #2c3e50;
+            color: white;
             cursor: pointer;
-            background: #ffcc00;
         }
 
-        #result {
+        button:hover {
+            background: #34495e;
+        }
+
+        .wall {
             margin-top: 40px;
-            font-size: 35px;
-            font-weight: bold;
-            animation: bounce 1s infinite alternate;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
         }
 
-        @keyframes bounce {
-            from { transform: scale(1); }
-            to { transform: scale(1.2); }
+        .note {
+            background: white;
+            padding: 20px;
+            width: 220px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-size: 15px;
+            line-height: 1.5;
+            position: relative;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .note span {
+            display: block;
+            margin-top: 10px;
+            font-size: 12px;
+            color: gray;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        footer {
+            margin-top: 50px;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            font-size: 14px;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>✨ Enter Your Name ✨</h1>
+    <header>
+        Writers Wall ✍️
+    </header>
 
-    <input type="text" id="nameInput" placeholder="Type your name">
-    <button onclick="magicName()">Show Magic</button>
+    <div class="container">
+        <h2>Write Something Beautiful</h2>
+        <textarea id="textInput" placeholder="Write your name, quote, or short message..."></textarea>
+        <br>
+        <button onclick="addNote()">Publish</button>
 
-    <div id="result"></div>
+        <div class="wall" id="wall"></div>
+    </div>
+
+    <footer>
+        Created with passion by Jacob 🚀
+    </footer>
 
     <script>
-        function magicName() {
-            let name = document.getElementById("nameInput").value;
+        function addNote() {
+            let text = document.getElementById("textInput").value;
 
-            if (name === "") {
-                alert("Enter your name first!");
+            if (text.trim() === "") {
+                alert("Please write something first!");
                 return;
             }
 
-            let colors = ["#ff4b5c", "#00f5d4", "#ffd60a", "#ff9f1c", "#9d4edd"];
-            let randomColor = colors[Math.floor(Math.random() * colors.length)];
+            let wall = document.getElementById("wall");
 
-            let messages = [
-                "🔥 is unstoppable!",
-                "🌟 is a superstar!",
-                "🚀 is going to be successful!",
-                "👑 is a legend!",
-                "💎 is shining today!"
-            ];
+            let note = document.createElement("div");
+            note.className = "note";
 
-            let randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            let now = new Date();
+            let date = now.toLocaleString();
 
-            let result = document.getElementById("result");
-            result.style.color = randomColor;
-            result.innerHTML = name + " " + randomMessage;
+            note.innerHTML = text + "<span>Posted on " + date + "</span>";
+
+            wall.prepend(note);
+
+            document.getElementById("textInput").value = "";
         }
     </script>
 
