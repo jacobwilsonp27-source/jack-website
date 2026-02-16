@@ -1,68 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Name Writer Website</title>
+    <title>Magic Name Fun 🎉</title>
     <style>
         body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f2f2f2;
-            margin-top: 50px;
+            color: white;
+            padding-top: 100px;
         }
 
         h1 {
-            color: #333;
+            font-size: 40px;
         }
 
         input {
-            padding: 10px;
-            font-size: 16px;
-            width: 200px;
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
         }
 
         button {
-            padding: 10px 15px;
-            font-size: 16px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 12px 20px;
+            font-size: 18px;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
+            background: #ffcc00;
         }
 
-        button:hover {
-            background-color: #45a049;
+        #result {
+            margin-top: 40px;
+            font-size: 35px;
+            font-weight: bold;
+            animation: bounce 1s infinite alternate;
         }
 
-        #nameList {
-            margin-top: 20px;
-            font-size: 20px;
-            color: blue;
+        @keyframes bounce {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Enter Your Name 👇</h1>
+    <h1>✨ Enter Your Name ✨</h1>
 
     <input type="text" id="nameInput" placeholder="Type your name">
-    <button onclick="addName()">Add Name</button>
+    <button onclick="magicName()">Show Magic</button>
 
-    <div id="nameList"></div>
+    <div id="result"></div>
 
     <script>
-        function addName() {
+        function magicName() {
             let name = document.getElementById("nameInput").value;
 
-            if(name === "") {
-                alert("Please enter a name!");
+            if (name === "") {
+                alert("Enter your name first!");
                 return;
             }
 
-            let list = document.getElementById("nameList");
-            list.innerHTML += name + "<br>";
+            let colors = ["#ff4b5c", "#00f5d4", "#ffd60a", "#ff9f1c", "#9d4edd"];
+            let randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-            document.getElementById("nameInput").value = "";
+            let messages = [
+                "🔥 is unstoppable!",
+                "🌟 is a superstar!",
+                "🚀 is going to be successful!",
+                "👑 is a legend!",
+                "💎 is shining today!"
+            ];
+
+            let randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+            let result = document.getElementById("result");
+            result.style.color = randomColor;
+            result.innerHTML = name + " " + randomMessage;
         }
     </script>
 
