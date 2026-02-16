@@ -1,140 +1,145 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Writers Wall ✍️</title>
+    <title>Snake Game 🐍</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <style>
         body {
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
             margin: 0;
-            font-family: 'Georgia', serif;
-            background: #f4f1ea;
-            text-align: center;
-        }
-
-        header {
-            background: #2c3e50;
             color: white;
-            padding: 30px;
-            font-size: 28px;
-            letter-spacing: 2px;
+            font-family: Arial, sans-serif;
         }
 
-        .container {
-            padding: 40px 20px;
+        h1 {
+            margin-bottom: 10px;
         }
 
-        textarea {
-            width: 80%;
-            max-width: 500px;
-            height: 100px;
-            padding: 15px;
-            font-size: 16px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-            resize: none;
+        canvas {
+            background: #222;
+            box-shadow: 0 0 20px #00ff88;
+        }
+
+        #score {
+            margin-top: 10px;
+            font-size: 18px;
         }
 
         button {
             margin-top: 15px;
-            padding: 12px 25px;
-            font-size: 16px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 8px;
-            background: #2c3e50;
-            color: white;
+            background: #00ff88;
+            color: black;
+            font-weight: bold;
             cursor: pointer;
-        }
-
-        button:hover {
-            background: #34495e;
-        }
-
-        .wall {
-            margin-top: 40px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .note {
-            background: white;
-            padding: 20px;
-            width: 220px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            font-size: 15px;
-            line-height: 1.5;
-            position: relative;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        .note span {
-            display: block;
-            margin-top: 10px;
-            font-size: 12px;
-            color: gray;
-        }
-
-        @keyframes fadeIn {
-            from {opacity: 0; transform: translateY(20px);}
-            to {opacity: 1; transform: translateY(0);}
-        }
-
-        footer {
-            margin-top: 50px;
-            padding: 20px;
-            background: #2c3e50;
-            color: white;
-            font-size: 14px;
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        Writers Wall ✍️
-    </header>
+    <h1>🐍 Snake Game</h1>
+    <canvas id="game" width="400" height="400"></canvas>
+    <div id="score">Score: 0</div>
+    <button onclick="restartGame()">Restart</button>
 
-    <div class="container">
-        <h2>Write Something Beautiful</h2>
-        <textarea id="textInput" placeholder="Write your name, quote, or short message..."></textarea>
-        <br>
-        <button onclick="addNote()">Publish</button>
+<script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
 
-        <div class="wall" id="wall"></div>
-    </div>
+    const box = 20;
+    const canvasSize = 400;
 
-    <footer>
-        Created with passion by Jacob 🚀
-    </footer>
+    let snake = [{x: 200, y: 200}];
+    let direction = "RIGHT";
+    let food = randomFood();
+    let score = 0;
+    let game;
 
-    <script>
-        function addNote() {
-            let text = document.getElementById("textInput").value;
+    function randomFood() {
+        return {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+    }
 
-            if (text.trim() === "") {
-                alert("Please write something first!");
-                return;
-            }
+    document.addEventListener("keydown", changeDirection);
 
-            let wall = document.getElementById("wall");
+    function changeDirection(event) {
+        if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+        if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+        if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+        if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    }
 
-            let note = document.createElement("div");
-            note.className = "note";
+    function drawGame() {
+        ctx.fillStyle = "#222";
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-            let now = new Date();
-            let date = now.toLocaleString();
+        // Draw snake
+        ctx.fillStyle = "#00ff88";
+        snake.forEach(part => {
+            ctx.fillRect(part.x, part.y, box, box);
+        });
 
-            note.innerHTML = text + "<span>Posted on " + date + "</span>";
+        // Draw food
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, box, box);
 
-            wall.prepend(note);
+        // Move snake
+        let head = {x: snake[0].x, y: snake[0].y};
 
-            document.getElementById("textInput").value = "";
+        if (direction === "UP") head.y -= box;
+        if (direction === "DOWN") head.y += box;
+        if (direction === "LEFT") head.x -= box;
+        if (direction === "RIGHT") head.x += box;
+
+        // Game Over conditions
+        if (
+            head.x < 0 || head.y < 0 ||
+            head.x >= canvasSize || head.y >= canvasSize ||
+            collision(head, snake)
+        ) {
+            clearInterval(game);
+            alert("Game Over! Your Score: " + score);
+            return;
         }
-    </script>
+
+        snake.unshift(head);
+
+        // Eat food
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            document.getElementById("score").innerText = "Score: " + score;
+            food = randomFood();
+        } else {
+            snake.pop();
+        }
+    }
+
+    function collision(head, array) {
+        return array.some(part => part.x === head.x && part.y === head.y);
+    }
+
+    function restartGame() {
+        snake = [{x: 200, y: 200}];
+        direction = "RIGHT";
+        score = 0;
+        document.getElementById("score").innerText = "Score: 0";
+        food = randomFood();
+        clearInterval(game);
+        game = setInterval(drawGame, 100);
+    }
+
+    game = setInterval(drawGame, 100);
+</script>
 
 </body>
 </html>
