@@ -1,145 +1,180 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Bike Racing Game 🏍️</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { margin: 0; overflow: hidden; background: black; }
-        #score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-family: Arial;
-            font-size: 18px;
-        }
-    </style>
+  <title>3D Bike Racing - Jacob Edition</title>
+  <style>
+    body { margin:0; overflow:hidden; background:black; }
+    #score {
+      position:absolute;
+      top:10px;
+      left:10px;
+      color:white;
+      font-size:20px;
+      font-family:Arial;
+    }
+    #gameOver {
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      color:white;
+      font-size:40px;
+      display:none;
+      text-align:center;
+    }
+    #restartBtn {
+      padding:10px 20px;
+      font-size:20px;
+      margin-top:20px;
+      cursor:pointer;
+    }
+    #controls {
+      position:absolute;
+      bottom:20px;
+      width:100%;
+      display:flex;
+      justify-content:space-between;
+      padding:0 40px;
+    }
+    .btn {
+      width:70px;
+      height:70px;
+      background:rgba(255,255,255,0.3);
+      border-radius:50%;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-size:30px;
+      color:white;
+      user-select:none;
+    }
+  </style>
 </head>
 <body>
 
 <div id="score">Score: 0</div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<div id="gameOver">
+  Game Over<br>
+  <button id="restartBtn">Restart</button>
+</div>
+
+<div id="controls">
+  <div class="btn" id="leftBtn">⬅</div>
+  <div class="btn" id="rightBtn">➡</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
 let scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
-
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-let renderer = new THREE.WebGLRenderer({antialias:true});
+let renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Light
-let light = new THREE.DirectionalLight(0xffffff, 1);
+let score = 0;
+let speed = 0.3;
+let gameRunning = true;
+
+let scoreText = document.getElementById("score");
+let gameOverText = document.getElementById("gameOver");
+let restartBtn = document.getElementById("restartBtn");
+
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playBeep() {
+  let osc = audioCtx.createOscillator();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+  osc.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.1);
+}
+
+let light = new THREE.PointLight(0xffffff,1);
 light.position.set(0,10,10);
 scene.add(light);
 
-// Road
-let roadGeometry = new THREE.PlaneGeometry(12, 200);
-let roadMaterial = new THREE.MeshLambertMaterial({color: 0x333333});
-let road = new THREE.Mesh(roadGeometry, roadMaterial);
+let bikeGeometry = new THREE.BoxGeometry(1,1,2);
+let bikeMaterial = new THREE.MeshPhongMaterial({color:0xff0000});
+let bike = new THREE.Mesh(bikeGeometry,bikeMaterial);
+bike.position.y = 0.5;
+scene.add(bike);
+
+let roadGeometry = new THREE.PlaneGeometry(20,200);
+let roadMaterial = new THREE.MeshPhongMaterial({color:0x333333});
+let road = new THREE.Mesh(roadGeometry,roadMaterial);
 road.rotation.x = -Math.PI/2;
 scene.add(road);
 
-// Bike (simple 3D shape)
-let bikeGroup = new THREE.Group();
+camera.position.z = 5;
+camera.position.y = 3;
+camera.lookAt(0,0,0);
 
-let body = new THREE.Mesh(
-    new THREE.BoxGeometry(1,0.5,2),
-    new THREE.MeshLambertMaterial({color:0xff0000})
-);
-body.position.y = 0.5;
-bikeGroup.add(body);
-
-let wheel1 = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.4,0.4,0.5,16),
-    new THREE.MeshLambertMaterial({color:0x000000})
-);
-wheel1.rotation.z = Math.PI/2;
-wheel1.position.set(0,0.4,0.9);
-bikeGroup.add(wheel1);
-
-let wheel2 = wheel1.clone();
-wheel2.position.z = -0.9;
-bikeGroup.add(wheel2);
-
-bikeGroup.position.z = 5;
-scene.add(bikeGroup);
-
-// Camera position
-camera.position.set(0,5,10);
-camera.lookAt(bikeGroup.position);
-
-// Obstacles
 let obstacles = [];
-let score = 0;
 
 function createObstacle(){
-    let obstacle = new THREE.Mesh(
-        new THREE.BoxGeometry(1,1,1),
-        new THREE.MeshLambertMaterial({color:0xffff00})
-    );
-    obstacle.position.x = (Math.random()-0.5)*8;
-    obstacle.position.y = 0.5;
-    obstacle.position.z = -100;
-    scene.add(obstacle);
-    obstacles.push(obstacle);
+  let geo = new THREE.BoxGeometry(1,1,1);
+  let mat = new THREE.MeshPhongMaterial({color:0xffff00});
+  let obs = new THREE.Mesh(geo,mat);
+  obs.position.x = (Math.random()*10)-5;
+  obs.position.z = -50;
+  obs.position.y = 0.5;
+  scene.add(obs);
+  obstacles.push(obs);
 }
 
-setInterval(createObstacle, 1500);
+setInterval(createObstacle,1500);
 
-// Controls
-document.addEventListener("keydown", e=>{
-    if(e.key==="ArrowLeft") bikeGroup.position.x -= 0.5;
-    if(e.key==="ArrowRight") bikeGroup.position.x += 0.5;
+function moveLeft(){ if(bike.position.x > -8) bike.position.x -= 1; }
+function moveRight(){ if(bike.position.x < 8) bike.position.x += 1; }
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="ArrowLeft") moveLeft();
+  if(e.key==="ArrowRight") moveRight();
 });
 
-// Touch
-let startX;
-window.addEventListener("touchstart", e=>{
-    startX = e.touches[0].clientX;
-});
+document.getElementById("leftBtn").addEventListener("touchstart",moveLeft);
+document.getElementById("rightBtn").addEventListener("touchstart",moveRight);
 
-window.addEventListener("touchend", e=>{
-    let endX = e.changedTouches[0].clientX;
-    if(endX-startX>50) bikeGroup.position.x += 0.5;
-    if(startX-endX>50) bikeGroup.position.x -= 0.5;
-});
-
-// Animation loop
 function animate(){
-    requestAnimationFrame(animate);
+  if(!gameRunning) return;
 
-    obstacles.forEach((ob,index)=>{
-        ob.position.z += 0.8;
+  requestAnimationFrame(animate);
 
-        if(
-            Math.abs(ob.position.x - bikeGroup.position.x) < 1 &&
-            Math.abs(ob.position.z - bikeGroup.position.z) < 1
-        ){
-            alert("Game Over! Final Score: "+score);
-            location.reload();
-        }
+  obstacles.forEach((obs,index)=>{
+    obs.position.z += speed;
 
-        if(ob.position.z > 10){
-            scene.remove(ob);
-            obstacles.splice(index,1);
-            score++;
-            document.getElementById("score").innerText = "Score: "+score;
-        }
-    });
+    if(obs.position.z > 5){
+      scene.remove(obs);
+      obstacles.splice(index,1);
+      score += 10;
+      speed += 0.01;
+      scoreText.innerHTML = "Score: " + score;
+      playBeep();
+    }
 
-    renderer.render(scene,camera);
+    if(Math.abs(obs.position.z - bike.position.z) < 1 &&
+       Math.abs(obs.position.x - bike.position.x) < 1){
+         gameRunning = false;
+         gameOverText.style.display = "block";
+    }
+  });
+
+  renderer.render(scene,camera);
 }
+
+restartBtn.onclick = ()=>{
+  location.reload();
+};
 
 animate();
 
-// Resize
 window.addEventListener("resize",()=>{
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
 });
 </script>
 
